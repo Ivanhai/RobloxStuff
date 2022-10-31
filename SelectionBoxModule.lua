@@ -50,11 +50,11 @@ end
 
 local SelectionBox = {}
 SelectionBox.__index = SelectionBox
-function SelectionBox.new(frame, callback, filter)
+function SelectionBox.new(frame, callback)
 	local new = setmetatable({
 		Frame = frame,
 		Callback = callback,
-		Filter = filter,
+		Filter = nil,
 		Enabled = false,
 		lastPos = Vector2.zero
 	}, SelectionBox)

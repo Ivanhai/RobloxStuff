@@ -60,8 +60,5 @@ function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
     end)
 end
 GetGcModule:updategc()
-GetGcModule:UpdateOnStarterScript(game.Players.LocalPlayer.PlayerGui.BuildGui.PlacementHandler, function(script)
-    print(script)
-end)
 
 return GetGcModule

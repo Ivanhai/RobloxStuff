@@ -56,7 +56,8 @@ function SelectionBox.new(frame, filter, callback)
 		Callback = callback,
 		Filter = filter,
 		Enabled = false,
-		lastPos = Vector2.zero
+		lastPos = Vector2.zero,
+        Selected = {}
 	}, SelectionBox)
 	UserInputService.InputBegan:Connect(function(input)
 		new:InputStarted(input)
@@ -74,6 +75,27 @@ function SelectionBox:SetEnabledState(state:boolean)
 end
 function SelectionBox:SetFilter(filter)
 	self.Filter = filter
+end
+function SelectionBox:AddSelected(instance:Instance)
+    table.insert(self.Selected, instance)
+    local box = Instance.new('SelectionBox')
+    box.Adornee = instance
+    box.Parent = instance
+end
+function SelectionBox:RemoveSelected(instance:Instance)
+    local index = table.find(self.Selected, instance)
+    if index then
+        table.remove(self.Selected, index)
+    end
+    local box = instance:FindFirstChild('SelectionBox')
+    if box then
+        box:Destroy()
+    end
+end
+function SelectionBox:UnselectAll()
+    for _, instance in ipairs(self.Selected) do
+        self:RemoveSelected(instance)
+    end
 end
 function SelectionBox:Update()
 	if self.Enabled then
@@ -94,7 +116,10 @@ function SelectionBox:InputEnded(input)
 		local pos = Vector2.new(input.Position.X, input.Position.Y)
 		self.Frame.Visible = false
 		local result = Search(self.Filter, To3dSpace(self.lastPos), To3dSpace(pos))
-		self.Callback(result)
+		for _, instance in ipairs(result) do
+            self:RemoveSelected(instance)
+            self:AddSelected(instance)
+        end
 	end
 end
 

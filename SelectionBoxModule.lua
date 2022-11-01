@@ -119,9 +119,12 @@ function SelectionBox:InputEnded(input)
 		self.Frame.Visible = false
 		local result = Search(self.Filter, To3dSpace(self.lastPos), To3dSpace(pos))
 		for _, instance in ipairs(result) do
-            self:RemoveSelected(instance)
-            self:AddSelected(instance)
-        end
+			if table.find(self.Selected, instance) then
+				self:RemoveSelected(instance)
+				continue
+			end
+            		self:AddSelected(instance)
+       		end
 	end
 end
 

@@ -39,16 +39,24 @@ function GetGcModule:FunctionInject(func, type, injection)
         end)
     end
 end
-function GetGcModule:UpdateOnScript(script:Script, callback):table
-    local function update(script, callback)
-        script.Destroying:Connect(function()
-            local new = script.Parent:WaitForChild(script.Name)
-            update(new, callback)
-            self:updategc()
-            callback(new)
-        end)
+function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
+    local Starter = {
+        "PlayerScripts",
+        "PlayerGui"
+    }
+    local ancestor:Instance
+    for _, path in ipairs(Starter) do
+        if not script:FindFirstAncestor(path) then
+            continue
+        end
+        ancestor = script:FindFirstAncestor(path)
     end
-    update(script, callback)
+    ancestor.DescendantAdded:Connect(function(descendant)
+        if descendant:IsA(script.ClassName) and descendant.Name == script.Name and descendant.Parent.Name == script.Parent.Name then
+            self:updategc()
+            callback(descendant)
+        end
+    end)
 end
 GetGcModule:updategc()
 

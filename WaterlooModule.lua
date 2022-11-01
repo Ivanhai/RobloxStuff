@@ -186,6 +186,9 @@ function WaterlooModule:HidePreview()
         structure.Model.Parent = nil
     end
 end
+function WaterlooModule:SetPausedState(state)
+    self.Paused = state	
+end
 function WaterlooModule:BuildStructure()
     if not LocalPlayer.Backpack:FindFirstChild("Hammer") and not LocalPlayer.Character:FindFirstChild("Hammer") then
         error("No hammer found")
@@ -208,6 +211,7 @@ function WaterlooModule:BuildStructure()
     end
     unfloat()
     connection:Disconnect()
+    repeat task.wait() until not self.Paused
 end
 
 return WaterlooModule

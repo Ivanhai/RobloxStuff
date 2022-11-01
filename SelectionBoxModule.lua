@@ -50,10 +50,9 @@ end
 
 local SelectionBox = {}
 SelectionBox.__index = SelectionBox
-function SelectionBox.new(frame, filter, callback)
+function SelectionBox.new(frame, filter)
 	local new = setmetatable({
 		Frame = frame,
-		Callback = callback,
 		Filter = filter,
 		Enabled = false,
 		lastPos = Vector2.zero,
@@ -77,6 +76,9 @@ function SelectionBox:SetFilter(filter)
 	self.Filter = filter
 end
 function SelectionBox:AddSelected(instance:Instance)
+    if table.find(self.Selected, instance) then
+        return
+    end
     table.insert(self.Selected, instance)
     local box = Instance.new('SelectionBox')
     box.Adornee = instance

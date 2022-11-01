@@ -1,3 +1,11 @@
+local function WaitForScript(script)
+    local _, result
+    while not typeof(result) == "table" do
+        _, result = pcall(function()
+            return getsenv(script)
+        end)
+    end
+end
 local GetGcModule = {}
 function GetGcModule:updategc()
     self.gc = getgc()
@@ -54,6 +62,7 @@ function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
     end
     ancestor.DescendantAdded:Connect(function(descendant)
         if descendant:IsA(script.ClassName) and getscripthash(descendant) == hash then
+            WaitForScript(descendant)
             self:updategc()
             callback(descendant)
         end

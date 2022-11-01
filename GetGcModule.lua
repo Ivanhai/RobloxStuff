@@ -45,7 +45,7 @@ function GetGcModule:UpdateOnScript(script:Script, callback):table
             local new = script.Parent:WaitForChild(script.Name)
             update(new, callback)
             self:updategc()
-            callback()
+            callback(new)
         end)
     end
     update(script, callback)

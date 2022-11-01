@@ -109,7 +109,6 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
     for _, model in ipairs(models) do
         local resultTable = {
             name = model.Name,
-            cost = 0
         }
         local PositionOffset = CFrame.new(0, self.structureCache[resultTable.name].PrimaryPart.CFrame.Position.Y / 2, 0)
         resultTable.cframe = EncodeCFrame(model.Center.CFrame:ToWorldSpace(PositionOffset))

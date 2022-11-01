@@ -119,7 +119,7 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
             resultTable.message = model.Center.TextGui.Display.Text
         elseif resultTable.name == "Flag" then
             resultTable.message = model.Center.FortGui.FortName.Text
-            resultTable.fortDecal = tonumber(model.ActualFlag["1"].TextureId:split('//')[2])
+            resultTable.fortDecal = tonumber(model.ActualFlag["1"].TextureID:split('//')[2])
         end
         file.cost = file.cost + self.buildingPrices[resultTable.name]
         table.insert(file.building, resultTable)

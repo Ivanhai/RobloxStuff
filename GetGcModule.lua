@@ -1,10 +1,11 @@
 local function WaitForScript(script)
-    local _, result
-    while not typeof(result) == "table" do
-        _, result = pcall(function()
+    local status, result
+    repeat
+        task.wait()
+        status, result = pcall(function()
             return getsenv(script)
         end)
-    end
+    until typeof(result) == "table"
 end
 local GetGcModule = {}
 function GetGcModule:updategc()

@@ -50,11 +50,11 @@ end
 
 local SelectionBox = {}
 SelectionBox.__index = SelectionBox
-function SelectionBox.new(frame, callback)
+function SelectionBox.new(frame, filter, callback)
 	local new = setmetatable({
 		Frame = frame,
 		Callback = callback,
-		Filter = nil,
+		Filter = filter,
 		Enabled = false,
 		lastPos = Vector2.zero
 	}, SelectionBox)
@@ -71,6 +71,9 @@ function SelectionBox.new(frame, callback)
 end
 function SelectionBox:SetEnabledState(state:boolean)
 	self.Enabled = state
+end
+function SelectionBox:SetFilter(filter)
+	self.Filter = filter
 end
 function SelectionBox:Update()
 	if self.Enabled then

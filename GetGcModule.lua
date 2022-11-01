@@ -22,27 +22,33 @@ function GetGcModule:getFunctionsByName(name:string):table
 end
 function GetGcModule:FunctionInject(func, type, injection)
     if type == "start" then
-        hookfunction(func, function(...)
+        local old
+        old = hookfunction(func, function(...)
             injection(...)
-            return func(...)
+            old(...)
         end)
     elseif type == "end" then
-        hookfunction(func, function(...)
-            func(...)
-            return injection(...)
+        local old
+        old = hookfunction(func, function(...)
+            old(...)
+            injection(...)
         end)
     elseif type == "replace" then
         hookfunction(func, function(...)
-            return injection(...)
+            injection(...)
         end)
     end
 end
 function GetGcModule:UpdateOnScript(script:Script, callback):table
-    script.Destroying:Connect(function()
-        script.Parent:WaitForChild(script.Name)
-        self:updategc()
-        callback()
-    end)
+    local function update(script, callback)
+        script.Destroying:Connect(function()
+            local new = script.Parent:WaitForChild(script.Name)
+            update(new, callback)
+            self:updategc()
+            callback()
+        end)
+    end
+    update(script, callback)
 end
 GetGcModule:updategc()
 

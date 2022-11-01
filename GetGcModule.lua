@@ -20,6 +20,23 @@ function GetGcModule:getFunctionsByName(name:string):table
     end
     return functions
 end
+function GetGcModule:FunctionInject(func, type, injection)
+    if type == "start" then
+        hookfunction(func, function(...)
+            injection(...)
+            return func(...)
+        end)
+    elseif type == "end" then
+        hookfunction(func, function(...)
+            func(...)
+            return injection(...)
+        end)
+    elseif type == "replace" then
+        hookfunction(func, function(...)
+            return injection(...)
+        end)
+    end
+end
 function GetGcModule:UpdateOnScript(script:Script, callback):table
     script.Destroying:Connect(function()
         script.Parent:WaitForChild(script.Name)

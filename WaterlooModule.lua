@@ -156,7 +156,7 @@ function WaterlooModule:SpawnPreview()
                 model.Center.FortGui.FortName.Text = structure.message
                 if structure.fortDecal then
                     for _,instance in ipairs(model.ActualFlag:GetChildren()) do
-                        instance.TextureId = "rbxassetid://"..structure.fortDecal
+                        instance.TextureID = "rbxassetid://"..structure.fortDecal
                     end
                 end
             end

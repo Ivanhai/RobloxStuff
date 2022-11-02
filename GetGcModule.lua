@@ -3,14 +3,12 @@ GetGcModule.__index = GetGcModule
 function GetGcModule:updategc()
     self.gc = getgc()
 end
-function GetGcModule:getFunctionsByNameAndScript(name:string, script:Script):table
-    local functions = {}
+function GetGcModule:getFunctionByNameAndScript(name:string, script:Script):table
     for _, value in ipairs(self.gc) do
         if type(value) == "function" and getinfo(value).name == name and getfenv(value).script == script then
-            table.insert(functions, value)
+            return value
         end
     end
-    return functions
 end
 function GetGcModule:getFunctionsByScript(script:Script):table
     local functions = {}

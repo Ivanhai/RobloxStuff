@@ -1,5 +1,5 @@
 local GetGcModule = {}
-GetGcModule.__index = SelectionBox
+GetGcModule.__index = GetGcModule
 function GetGcModule:updategc()
     self.gc = getgc()
 end

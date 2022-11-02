@@ -50,10 +50,12 @@ function GetGcModule:FunctionInject(func, type, injection)
     end
 end
 function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
+    local OldFunctionsLength = #self:getFunctionsByScript(script)
     local hash = getscripthash(script)
+    -- getting ancestor that will not be destroyed
     local Starter = {
-        "PlayerScripts",
-        "PlayerGui"
+        "PlayerGui",
+        "Workspace"
     }
     local ancestor:Instance
     for _, path in ipairs(Starter) do
@@ -64,7 +66,10 @@ function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
     end
     ancestor.DescendantAdded:Connect(function(descendant)
         if descendant:IsA(script.ClassName) and getscripthash(descendant) == hash then
-            repeat self:updategc() until #self:getFunctionsByScript(descendant) > 0
+            while #self:getFunctionsByScript(descendant) < OldFunctionsLength do
+                self:updategc()
+                task.wait(1)
+            end
             callback(descendant)
         end
     end)

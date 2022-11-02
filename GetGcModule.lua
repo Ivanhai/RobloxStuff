@@ -1,12 +1,3 @@
-local function WaitForScript(script)
-    local status, result
-    repeat
-        task.wait()
-        status, result = pcall(function()
-            return getsenv(script)
-        end)
-    until typeof(result) == "table"
-end
 local GetGcModule = {}
 function GetGcModule:updategc()
     self.gc = getgc()
@@ -63,12 +54,18 @@ function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
     end
     ancestor.DescendantAdded:Connect(function(descendant)
         if descendant:IsA(script.ClassName) and getscripthash(descendant) == hash then
-            WaitForScript(descendant)
+            -- wait for script to end
+            task.wait(1)
+            ---------------------------
             self:updategc()
             callback(descendant)
         end
     end)
 end
-GetGcModule:updategc()
+function GetGcModule.new()
+    local new = setmetatable({}, GetGcModule)
+    new:updategc()
+    return new
+end
 
 return GetGcModule

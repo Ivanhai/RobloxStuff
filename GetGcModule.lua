@@ -12,6 +12,15 @@ function GetGcModule:getFunctionsByNameAndScript(name:string, script:Script):tab
     end
     return functions
 end
+function GetGcModule:getFunctionsByScript(script:Script):table
+    local functions = {}
+    for _, value in ipairs(self.gc) do
+        if type(value) == "function" and getfenv(value).script == script then
+            table.insert(functions, value)
+        end
+    end
+    return functions
+end
 function GetGcModule:getFunctionsByName(name:string):table
     local functions = {}
     for _, value in ipairs(self.gc) do
@@ -41,6 +50,7 @@ function GetGcModule:FunctionInject(func, type, injection)
     end
 end
 function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
+    script:GetPropertyChangedSignal("")
     local hash = getscripthash(script)
     local Starter = {
         "PlayerScripts",
@@ -55,10 +65,7 @@ function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
     end
     ancestor.DescendantAdded:Connect(function(descendant)
         if descendant:IsA(script.ClassName) and getscripthash(descendant) == hash then
-            -- wait for script to end
-            task.wait(1)
-            ---------------------------
-            self:updategc()
+            repeat self:updategc() until #self:getFunctionsByScript(descendant) > 0
             callback(descendant)
         end
     end)

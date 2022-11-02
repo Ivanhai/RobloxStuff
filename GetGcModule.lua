@@ -28,25 +28,6 @@ function GetGcModule:getFunctionsByName(name:string):table
     end
     return functions
 end
-function GetGcModule:FunctionInject(func, type, injection)
-    if type == "start" then
-        local old
-        old = hookfunction(func, function(...)
-            injection(...)
-            old(...)
-        end)
-    elseif type == "end" then
-        local old
-        old = hookfunction(func, function(...)
-            old(...)
-            injection(...)
-        end)
-    elseif type == "replace" then
-        hookfunction(func, function(...)
-            return injection(...)
-        end)
-    end
-end
 function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
     local OldFunctionsLength = #self:getFunctionsByScript(script)
     local hash = getscripthash(script)

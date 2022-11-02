@@ -43,7 +43,7 @@ function GetGcModule:FunctionInject(func, type, injection)
         end)
     elseif type == "replace" then
         hookfunction(func, function(...)
-            injection(...)
+            return injection(...)
         end)
     end
 end

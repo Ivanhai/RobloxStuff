@@ -3,7 +3,7 @@ GetGcModule.__index = GetGcModule
 function GetGcModule:updategc()
     self.gc = getgc()
 end
-function GetGcModule:getFunctionByNameAndScript(name:string, script:Script):table
+function GetGcModule:getFunctionByNameAndScript(name:string, script:Script)
     for _, value in ipairs(self.gc) do
         if type(value) == "function" and getinfo(value).name == name and getfenv(value).script == script then
             return value

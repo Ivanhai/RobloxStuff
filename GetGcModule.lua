@@ -50,7 +50,6 @@ function GetGcModule:FunctionInject(func, type, injection)
     end
 end
 function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
-    script:GetPropertyChangedSignal("")
     local hash = getscripthash(script)
     local Starter = {
         "PlayerScripts",

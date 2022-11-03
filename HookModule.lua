@@ -30,7 +30,7 @@ end
 function HookModule.new()
     local new = setmetatable({}, HookModule)
     local OldNameCall = nil
-    OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
+    OldNameCall = hookmetamethod(game, "__namecall", function(...)
         local Args = {...}
         local NamecallMethod = getnamecallmethod()
     
@@ -40,13 +40,13 @@ function HookModule.new()
             end
         end
     
-        return OldNameCall(Self, ...)
+        return OldNameCall(...)
     end)
     local OldIndex = nil
     OldIndex = hookmetamethod(game, "__index", function(Self, Key)
         if not checkcaller() then
             if new.index[Self] and new.index[Self].key == Key then
-                return new.index[Self].callback(OldIndex)
+                return new.index[Self].callback(Self, OldIndex)
             end
         end
 

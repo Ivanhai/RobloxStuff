@@ -28,15 +28,18 @@ function HookModule:UnhookIndex(hooked)
     self.index[hooked] = nil
 end
 function HookModule.new()
-    local new = setmetatable({}, HookModule)
+    local new = setmetatable({
+        namecall = {},
+        index = {},
+    }, HookModule)
     local OldNameCall = nil
-    OldNameCall = hookmetamethod(game, "__namecall", function(...)
+    OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
         local Args = {...}
         local NamecallMethod = getnamecallmethod()
     
         if not checkcaller() then
             if new.namecall[Self] and new.namecall[Self].namecall == NamecallMethod then
-                return new.namecall[Self].callback(Args, OldNameCall)
+                return new.namecall[Self].callback(Self, Args, OldNameCall)
             end
         end
     

@@ -2,10 +2,9 @@ local HookModule = {}
 HookModule.__index = HookModule
 
 function HookModule:HookRemote(remote, callback)
-    local type = typeof(remote)
-    if type == "RemoteFunction" then
+    if remote.ClassName == "RemoteFunction" then
         self:HookNamecall(remote, "InvokeServer", callback)
-    elseif type == "RemoteEvent" then
+    elseif remote.ClassName == "RemoteEvent" then
         self:HookNamecall(remote, "FireServer", callback)
     end
 end

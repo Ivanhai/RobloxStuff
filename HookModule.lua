@@ -42,7 +42,7 @@ function HookModule.new()
             end
         end
     
-        return OldNameCall(...)
+        return OldNameCall(Self, ...)
     end)
     local OldIndex = nil
     OldIndex = hookmetamethod(game, "__index", function(Self, Key)

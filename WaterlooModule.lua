@@ -99,6 +99,11 @@ workspace.ChildAdded:Connect(function(child)
         WaterlooModule.selectedStructure = child
     end
 end)
+workspace.ChildRemoved:Connect(function(child)
+    if WaterlooModule.selectedStructure == child then
+        WaterlooModule.selectedStructure = nil
+    end
+end)
 workspace.Structures.ChildAdded:Connect(function(child)
     if child:GetAttribute("OwnerName") == LocalPlayer.Name then
         WaterlooModule.createdStructure = child

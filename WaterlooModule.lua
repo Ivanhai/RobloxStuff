@@ -115,8 +115,11 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
         local resultTable = {
             name = model.Name,
         }
-        local PositionOffset = CFrame.new(0, self.structureCache[resultTable.name].PrimaryPart.CFrame.Position.Y / 2, 0)
-        resultTable.cframe = EncodeCFrame(model.Center.CFrame:ToWorldSpace(PositionOffset))
+        -- cframe gonna be lowest point of model
+        local cframe = model:GetBoundingBox().CFrame
+        local pos = cframe.Position.Y - cframe.Position.Y / 2
+        cframe = CFrame.new(pos) * CFrame.Angles(cframe:ToOrientation())
+        resultTable.cframe = EncodeCFrame(cframe)
         if resultTable.name == "DecalSign" then
             resultTable.message = model.Center.ImageGui.ImageLabel.Image:split('//')[2]
         elseif resultTable.name == "LargeSign" or resultTable.name == "SmallSign" or resultTable.name == "OverhangSign" then
@@ -192,7 +195,7 @@ function WaterlooModule:HidePreview()
     end
 end
 function WaterlooModule:SetPausedState(state)
-    self.Paused = state	
+    self.Paused = state
 end
 function WaterlooModule:BuildStructure()
     if not LocalPlayer.Backpack:FindFirstChild("Hammer") and not LocalPlayer.Character:FindFirstChild("Hammer") then

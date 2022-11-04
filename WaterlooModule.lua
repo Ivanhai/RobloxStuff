@@ -116,7 +116,7 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
             name = model.Name,
         }
         -- cframe gonna be lowest point of model
-        local cframe = model:GetBoundingBox().CFrame
+        local cframe = model:GetBoundingBox()
         local pos = cframe.Position.Y - cframe.Position.Y / 2
         cframe = CFrame.new(pos) * CFrame.Angles(cframe:ToOrientation())
         resultTable.cframe = EncodeCFrame(cframe)

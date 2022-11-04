@@ -3,7 +3,7 @@ GetGcModule.__index = GetGcModule
 function GetGcModule:updategc()
     self.gc = getgc()
 end
-function GetGcModule:getFunctionByNameAndScript(name:string, script:Script)
+function GetGcModule:getFunctionByNameAndScript(name:string, script:Script):table
     for _, value in ipairs(self.gc) do
         if type(value) == "function" and getinfo(value).name == name and getfenv(value).script == script then
             return value
@@ -28,13 +28,14 @@ function GetGcModule:getFunctionsByName(name:string):table
     end
     return functions
 end
-function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
+function GetGcModule:WatchScript(script:Script, callback, init:boolean)
+    if init then callback(script) end
     local OldFunctionsLength = #self:getFunctionsByScript(script)
     local hash = getscripthash(script)
     -- getting ancestor that will not be destroyed
     local Starter = {
         "PlayerGui",
-        "Workspace"
+        game.Players.LocalPlayer.Character.Parent.Name
     }
     local ancestor:Instance
     for _, path in ipairs(Starter) do
@@ -43,9 +44,10 @@ function GetGcModule:UpdateOnStarterScript(script:Script, callback):table
         end
         ancestor = script:FindFirstAncestor(path)
     end
+    if not ancestor then return end
     ancestor.DescendantAdded:Connect(function(descendant)
         if descendant:IsA(script.ClassName) and getscripthash(descendant) == hash then
-            while #self:getFunctionsByScript(descendant) < OldFunctionsLength do
+            while #self:getFunctionsByScript(descendant) <= OldFunctionsLength do
                 self:updategc()
                 task.wait(1)
             end

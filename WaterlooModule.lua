@@ -142,6 +142,7 @@ function StructureModule:Build()
     end
     local cframe = CFrame.new()
     local connection = LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(1)
         float()
         ChangeCamera()
         getRoot(LocalPlayer.Character).CFrame = cframe

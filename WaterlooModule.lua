@@ -93,7 +93,7 @@ function StructureModule:Spawn()
             structureCache[structure.name] = model
         end
         local model = structureCache[structure.name]:Clone()
-        model:PivotTo(DecodeCFrame(structure.cframe))
+        model:SetPrimaryPartCFrame(DecodeCFrame(structure.cframe))
         model.Parent = workspace
         if structure.message then
             if structure.name == "DecalSign" then
@@ -164,7 +164,7 @@ function StructureModule:Move(newpos:Vector3)
     end
     for Model, RelativePosition in pairs(self.Relative) do
         local cframe = CFrame.new(newpos + RelativePosition) * CFrame.Angles(Model.PrimaryPart.CFrame:ToOrientation())
-        Model:PivotTo(cframe)
+        Model:SetPrimaryPartCFrame(cframe)
     end
 end
 function StructureModule:SetProperty(property:string, value)
@@ -231,8 +231,7 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
         end
         local cached = structureCache[resultTable.name]
         local cframe = GetPartRelative(cached.PrimaryPart, model:GetBoundingBox())
-        local PositionOffset = CFrame.new(0, cached.PrimaryPart.Size.Y / 2, 0)
-        resultTable.cframe = EncodeCFrame(cframe:ToWorldSpace(PositionOffset))
+        resultTable.cframe = EncodeCFrame(cframe)
         if resultTable.name == "DecalSign" then
             resultTable.message = model.Center.ImageGui.ImageLabel.Image:split('//')[2]
         elseif resultTable.name == "LargeSign" or resultTable.name == "SmallSign" or resultTable.name == "OverhangSign" then

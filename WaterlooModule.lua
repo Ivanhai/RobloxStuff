@@ -182,6 +182,8 @@ function StructureModule:Destroy()
     for Model, _ in pairs(self.Relative) do
         Model:Destroy()
     end
+    self.Relative = {}
+    self.Center = Vector3.zero
 end
 function StructureModule:SetPausedState(state)
     self.paused = state
@@ -229,8 +231,7 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
             model.Parent = nil
             structureCache[resultTable.name] = model
         end
-        local cached = structureCache[resultTable.name]
-        local cframe = GetPartRelative(cached.PrimaryPart, model:GetBoundingBox())
+        local cframe = GetPartRelative(structureCache[resultTable.name].PrimaryPart, model:GetBoundingBox())
         resultTable.cframe = EncodeCFrame(cframe)
         if resultTable.name == "DecalSign" then
             resultTable.message = model.Center.ImageGui.ImageLabel.Image:split('//')[2]

@@ -231,7 +231,7 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
         end
         local cached = structureCache[resultTable.name]
         local cframe = GetPartRelative(cached.PrimaryPart, model:GetBoundingBox())
-        local PositionOffset = CFrame.new(0, model.PrimaryPart.Size.Y / 2, 0)
+        local PositionOffset = CFrame.new(0, cached.PrimaryPart.Size.Y / 2, 0)
         resultTable.cframe = EncodeCFrame(cframe:ToWorldSpace(PositionOffset))
         if resultTable.name == "DecalSign" then
             resultTable.message = model.Center.ImageGui.ImageLabel.Image:split('//')[2]

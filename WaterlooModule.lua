@@ -4,14 +4,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService('StarterGui')
 local LocalPlayer = Players.LocalPlayer
 
-local GetStructureModel:RemoteFunction = ReplicatedStorage.RemoteFunctions.GetStructureModel
+local GetStructureModel = ReplicatedStorage.RemoteFunctions.GetStructureModel
 local PlaceStructure = ReplicatedStorage.RemoteFunctions.PlaceStructure
 local ShoutMessage = ReplicatedStorage.RemoteEvents.ShoutMessage
 local SetFlagDecal = ReplicatedStorage.RemoteEvents.SetFlagDecal
 
-local WaterlooModule = {}
-local Center = Vector3.zero
-local Relative = {}
 function getRoot(char)
 	local rootPart = char:FindFirstChild('HumanoidRootPart') or char:FindFirstChild('Torso') or char:FindFirstChild('UpperTorso')
 	return rootPart
@@ -68,58 +65,174 @@ function ChangeCamera()
 	LocalPlayer.CameraMaxZoomDistance = 35;
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true);
 end
-function TeleportAndBuild(cframe, name, message, fortDecal):number
-    local response = false
+function GetPartRelative(part:BasePart, newPos:CFrame):CFrame
+	local model = part.Parent
+	if not model:IsA("Model") then error("Parent not a model") end
+	local center = model:GetBoundingBox()
+	local RelativePosition = center:ToObjectSpace(part.CFrame)
+	local NewCFrame = newPos * RelativePosition
+	return NewCFrame
+end
+local StructureModule = {}
+StructureModule.__index = StructureModule
+function StructureModule.new(Waterloo, building, cost)
+    local self = setmetatable({
+        Waterloo = Waterloo,
+        building = building,
+        cost = cost,
+        Center = Vector3.zero,
+        Relative = {}
+    }, StructureModule)
+    return self
+end
+function StructureModule:Spawn()
+    for _,structure in ipairs(self.building) do
+        if not structureCache[structure.name] then
+            local model = GetStructureModel:InvokeServer(structure.name):Clone()
+            model.Parent = nil
+            structureCache[structure.name] = model
+        end
+        local model = structureCache[structure.name]:Clone()
+        model:PivotTo(DecodeCFrame(structure.cframe))
+        model.Parent = workspace
+        if structure.message then
+            if structure.name == "DecalSign" then
+                model.Center.ImageGui.ImageLabel.Image = "rbxassetid://"..structure.message
+            elseif structure.name == "LargeSign" or structure.name == "SmallSign" or structure.name == "OverhangSign" then
+                model.Center.TextGui.Display.Text = structure.message
+            elseif structure.name == "Fort" then
+                model.Center.FortGui.FortName.Text = structure.message
+                if structure.fortDecal then
+                    for _,instance in ipairs(model.ActualFlag:GetChildren()) do
+                        instance.TextureID = "rbxassetid://"..structure.fortDecal
+                    end
+                end
+            end
+        end
+        structure.Model = model
+    end
+    for _,structure in ipairs(self.building) do
+        self.Center = self.Center + structure.Model.PrimaryPart.Position
+    end
+    self.Center = self.Center / #self.building
+    for _, structure in ipairs(self.building) do
+	    self.Relative[structure.Model] = structure.Model.PrimaryPart.Position - self.Center
+    end
+end
+function StructureModule:TeleportAndBuild(cframe, name, message, fortDecal):number
+    local response
     getRoot(LocalPlayer.Character).CFrame = cframe
     while not response do
         response = PlaceStructure:InvokeServer(workspace.Terrain, Enum.Material.Sandstone, name, cframe)
         task.wait(.5)
     end
     if message then
-        ShoutMessage:FireServer(message, WaterlooModule.createdStructure)
+        ShoutMessage:FireServer(message, self.Waterloo.createdStructure)
     elseif fortDecal then
         SetFlagDecal:FireServer(fortDecal)
     end
     return response
 end
-WaterlooModule.buildingPrices = {}
-for _,instance in ipairs(LocalPlayer.PlayerGui.BuildGui.Backing:GetDescendants()) do
-    if instance:IsA("ImageButton") then
-        WaterlooModule.buildingPrices[instance.Name] = tonumber(instance:GetAttribute("Cost"):split(' ')[2])
+function StructureModule:Build()
+    if not self.building[1].Model then
+        error("Spawn the structure first")
+    end
+    if not LocalPlayer.Backpack:FindFirstChild("Hammer") and not LocalPlayer.Character:FindFirstChild("Hammer") then
+        error("No hammer found")
+    end
+    local cframe = CFrame.new()
+    local connection = LocalPlayer.CharacterAdded:Connect(function()
+        float()
+        ChangeCamera()
+        getRoot(LocalPlayer.Character).CFrame = cframe
+        EquipTool(LocalPlayer.Backpack.Hammer)
+    end)
+    float()
+    EquipTool(LocalPlayer.Backpack.Hammer)
+    for _,structure in ipairs(self.Structure.building) do
+        cframe = structure.Model.PrimaryPart.CFrame
+        local newTokens = self:TeleportAndBuild(cframe, structure.name, structure.message, structure.fortDecal)
+        LocalPlayer.PlayerGui:WaitForChild("BuildGui"):WaitForChild("Backing"):WaitForChild("Tokens").Text = "Materials: "..newTokens
+        repeat task.wait() until not self.paused
+    end
+    unfloat()
+    connection:Disconnect()
+end
+function StructureModule:Move(newpos:Vector3)
+    if not self.building[1].Model then
+        error("Spawn the structure first")
+    end
+    for Model, RelativePosition in pairs(self.Relative) do
+        local cframe = CFrame.new(newpos + RelativePosition) * CFrame.Angles(Model.PrimaryPart.CFrame:ToOrientation())
+        Model:PivotTo(cframe)
     end
 end
-WaterlooModule.structureCache = {}
-for structureName,_ in pairs(WaterlooModule.buildingPrices) do
-    local model:Model = GetStructureModel:InvokeServer(structureName):Clone()
-    model.Parent = nil
-    WaterlooModule.structureCache[structureName] = model
+function StructureModule:SetProperty(property:string, value)
+    if not self.building[1].Model then
+        error("Spawn the structure first")
+    end
+    for Model, _ in pairs(self.Relative) do
+        Model[property] = value
+    end
 end
-workspace.ChildAdded:Connect(function(child)
-    if child:IsA("Model") and WaterlooModule.buildingPrices[child.Name] then
-        WaterlooModule.selectedStructure = child
+function StructureModule:Destroy()
+    if not self.building[1].Model then
+        error("Spawn the structure first")
     end
-end)
-workspace.ChildRemoved:Connect(function(child)
-    if WaterlooModule.selectedStructure == child then
-        WaterlooModule.selectedStructure = nil
+    for Model, _ in pairs(self.Relative) do
+        Model:Destroy()
     end
-end)
-workspace.Structures.ChildAdded:Connect(function(child)
-    if child:GetAttribute("OwnerName") == LocalPlayer.Name then
-        WaterlooModule.createdStructure = child
+end
+function StructureModule:SetPausedState(state)
+    self.paused = state
+end
+
+local WaterlooModule = {}
+WaterlooModule.__index = WaterlooModule
+function WaterlooModule.new()
+    if not structureCache then
+        structureCache = {}
     end
-end)
+    local self = setmetatable({}, WaterlooModule)
+    self.buildingPrices = {}
+    for _,instance in ipairs(LocalPlayer.PlayerGui:WaitForChild("BuildGui"):WaitForChild("Backing"):GetDescendants()) do
+        if instance:IsA("ImageButton") then
+            self.buildingPrices[instance.Name] = tonumber(instance:GetAttribute("Cost"):split(' ')[2])
+        end
+    end
+    workspace.Structures.ChildAdded:Connect(function(child)
+        if child:GetAttribute("OwnerName") == LocalPlayer.Name then
+            self.createdStructure = child
+        end
+    end)
+    workspace.ChildAdded:Connect(function(child)
+        if self.buildingPrices[child.Name] then
+            self.selectedStructure = child
+        end
+    end)
+    workspace.ChildRemoved:Connect(function(child)
+        if child == self.selectedStructure then
+            self.selectedStructure = nil
+        end
+    end)
+    return self
+end
 function WaterlooModule:SaveStructureToFile(models, filePath)
     local file = {building = {}, cost = 0}
     for _, model in ipairs(models) do
+        if not model:FindFirstChild("Center") then error("Not a structure!") end
         local resultTable = {
             name = model.Name,
         }
-        -- cframe gonna be lowest point of model
-        local cframe = model:GetBoundingBox()
-        local pos = cframe.Position.Y - cframe.Position.Y / 2
-        cframe = CFrame.new(pos) * CFrame.Angles(cframe:ToOrientation())
-        resultTable.cframe = EncodeCFrame(cframe)
+        if not structureCache[resultTable.name] then
+            local model = GetStructureModel:InvokeServer(resultTable.name):Clone()
+            model.Parent = nil
+            structureCache[resultTable.name] = model
+        end
+        local cached = structureCache[resultTable.name]
+        local cframe = GetPartRelative(cached.PrimaryPart, model:GetBoundingBox())
+        local PositionOffset = CFrame.new(0, model.PrimaryPart.Size.Y / 2, 0)
+        resultTable.cframe = EncodeCFrame(cframe:ToWorldSpace(PositionOffset))
         if resultTable.name == "DecalSign" then
             resultTable.message = model.Center.ImageGui.ImageLabel.Image:split('//')[2]
         elseif resultTable.name == "LargeSign" or resultTable.name == "SmallSign" or resultTable.name == "OverhangSign" then
@@ -145,81 +258,8 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
 end
 function WaterlooModule:LoadStructureFromFile(filePath:string)
     local fileString = readfile(filePath)
-    self.Structure = HttpService:JSONDecode(fileString)
-end
-function WaterlooModule:SpawnPreview()
-    Center = Vector3.zero
-    Relative = {}
-    for _,structure in ipairs(self.Structure.building) do
-        local model = WaterlooModule.structureCache[structure.name]:Clone()
-        model:PivotTo(DecodeCFrame(structure.cframe))
-        model.Parent = workspace
-        if structure.message then
-            if structure.name == "DecalSign" then
-                model.Center.ImageGui.ImageLabel.Image = "rbxassetid://"..structure.message
-            elseif structure.name == "LargeSign" or structure.name == "SmallSign" or structure.name == "OverhangSign" then
-                model.Center.TextGui.Display.Text = structure.message
-            elseif structure.name == "Fort" then
-                model.Center.FortGui.FortName.Text = structure.message
-                if structure.fortDecal then
-                    for _,instance in ipairs(model.ActualFlag:GetChildren()) do
-                        instance.TextureID = "rbxassetid://"..structure.fortDecal
-                    end
-                end
-            end
-        end
-        structure.Model = model
-    end
-    for _,structure in ipairs(self.Structure.building) do
-        Center = Center + structure.Model.PrimaryPart.Position
-    end
-    Center = Center / #self.Structure.building
-    for _, structure in ipairs(self.Structure.building) do
-	    Relative[structure.Model] = structure.Model.PrimaryPart.Position - Center
-    end
-end
-function WaterlooModule:MovePreview(newPos:Vector3)
-    for Model, RelativePosition in pairs(Relative) do
-        local cframe = CFrame.new(newPos + RelativePosition) * CFrame.Angles(Model.PrimaryPart.CFrame:ToOrientation())
-        Model:PivotTo(cframe)
-    end
-end
-function WaterlooModule:DestroyPreview()
-    for _, structure in ipairs(self.Structure.building) do
-        structure.Model:Destroy()
-    end
-end
-function WaterlooModule:HidePreview()
-    for _,structure in ipairs(self.Structure.building) do
-        structure.Model.Parent = nil
-    end
-end
-function WaterlooModule:SetPausedState(state)
-    self.Paused = state
-end
-function WaterlooModule:BuildStructure()
-    if not LocalPlayer.Backpack:FindFirstChild("Hammer") and not LocalPlayer.Character:FindFirstChild("Hammer") then
-        error("No hammer found")
-    end
-    local cframe = CFrame.new()
-    local connection = LocalPlayer.CharacterAdded:Connect(function()
-        task.wait(1)
-        float()
-        ChangeCamera()
-        getRoot(LocalPlayer.Character).CFrame = cframe
-        EquipTool(LocalPlayer.Backpack.Hammer)
-    end)
-    float()
-    EquipTool(LocalPlayer.Backpack.Hammer)
-    for _,structure in ipairs(self.Structure.building) do
-        cframe = structure.Model.PrimaryPart.CFrame
-        local newTokens = TeleportAndBuild(cframe, structure.name, structure.message, structure.fortDecal)
-        LocalPlayer.PlayerGui.BuildGui.Backing.Tokens.Text = "Materials: "..newTokens
-        structure.Model:Destroy()
-    end
-    unfloat()
-    connection:Disconnect()
-    repeat task.wait() until not self.Paused
+    local decoded = HttpService:JSONDecode(fileString)
+    return StructureModule.new(self, decoded.building, decoded.cost)
 end
 
 return WaterlooModule

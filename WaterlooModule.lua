@@ -149,7 +149,7 @@ function StructureModule:Build()
     end)
     float()
     EquipTool(LocalPlayer.Backpack.Hammer)
-    for _,structure in ipairs(self.Structure.building) do
+    for _,structure in ipairs(self.building) do
         cframe = structure.Model.PrimaryPart.CFrame
         local newTokens = self:TeleportAndBuild(cframe, structure.name, structure.message, structure.fortDecal)
         LocalPlayer.PlayerGui:WaitForChild("BuildGui"):WaitForChild("Backing"):WaitForChild("Tokens").Text = "Materials: "..newTokens

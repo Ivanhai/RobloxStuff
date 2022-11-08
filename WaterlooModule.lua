@@ -119,7 +119,7 @@ function StructureModule:Spawn()
 	    self.Relative[structure.Model] = structure.Model.PrimaryPart.Position - self.Center
     end
 end
-function StructureModule:TeleportAndBuild(cframe, name, message, fortDecal):number
+function StructureModule:TeleportAndBuild(cframe, name, message, fortDecal, InGameName):number
     local response
     getRoot(LocalPlayer.Character).CFrame = cframe
     while not response do
@@ -128,8 +128,12 @@ function StructureModule:TeleportAndBuild(cframe, name, message, fortDecal):numb
     end
     if message then
         ShoutMessage:FireServer(message, self.Waterloo.createdStructure)
-    elseif fortDecal then
+    end
+    if fortDecal then
         SetFlagDecal:FireServer(fortDecal)
+    end
+    if InGameName then
+        self.Waterloo.createdStructure.Name = InGameName
     end
     return response
 end
@@ -152,7 +156,7 @@ function StructureModule:Build()
     EquipTool(LocalPlayer.Backpack.Hammer)
     for _,structure in ipairs(self.building) do
         cframe = structure.Model.PrimaryPart.CFrame
-        local newTokens = self:TeleportAndBuild(cframe, structure.name, structure.message, structure.fortDecal)
+        local newTokens = self:TeleportAndBuild(cframe, structure.name, structure.message, structure.fortDecal, structure.InGameName)
         LocalPlayer.PlayerGui:WaitForChild("BuildGui"):WaitForChild("Backing"):WaitForChild("Tokens").Text = "Materials: "..newTokens
         repeat task.wait() until not self.paused
     end
@@ -197,10 +201,10 @@ function WaterlooModule.new()
         structureCache = {}
     end
     local self = setmetatable({}, WaterlooModule)
-    self.buildingPrices = {}
+    self.buildingsNames = {}
     for _,instance in ipairs(LocalPlayer.PlayerGui:WaitForChild("BuildGui"):WaitForChild("Backing"):GetDescendants()) do
         if instance:IsA("ImageButton") then
-            self.buildingPrices[instance.Name] = tonumber(instance:GetAttribute("Cost"):split(' ')[2])
+            table.insert(self.buildingsNames, instance.Name)
         end
     end
     workspace.Structures.ChildAdded:Connect(function(child)
@@ -209,7 +213,7 @@ function WaterlooModule.new()
         end
     end)
     workspace.ChildAdded:Connect(function(child)
-        if self.buildingPrices[child.Name] then
+        if child:GetAttribute("Cost") then
             self.selectedStructure = child
         end
     end)
@@ -222,11 +226,16 @@ function WaterlooModule.new()
 end
 function WaterlooModule:SaveStructureToFile(models, filePath)
     local file = {building = {}, cost = 0}
-    for _, model in ipairs(models) do
-        if not model:FindFirstChild("Center") then error("Not a structure!") end
+    for _, model:Instance in ipairs(models) do
+        if not model:IsDescendantOf(workspace.Structures) then continue end
         local resultTable = {
             name = model.Name,
         }
+        -- useful for botting (use dex to set names)
+        if not table.find(self.buildingsNames, resultTable.name) then
+            resultTable.InGameName = model.Name
+        end
+        ----------
         if not structureCache[resultTable.name] then
             local model = GetStructureModel:InvokeServer(resultTable.name):Clone()
             model.Parent = nil
@@ -242,7 +251,7 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
             resultTable.message = model.Center.FortGui.FortName.Text
             resultTable.fortDecal = tonumber(model.ActualFlag["1"].TextureID:split('//')[2])
         end
-        file.cost = file.cost + self.buildingPrices[resultTable.name]
+        file.cost = file.cost + model:GetAttribute("Cost")
         table.insert(file.building, resultTable)
     end
     -- check if nothing saved

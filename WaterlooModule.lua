@@ -81,8 +81,18 @@ function StructureModule.new(Waterloo, building, cost)
         building = building,
         cost = cost,
         Center = Vector3.zero,
+        changedName = {},
         Relative = {}
     }, StructureModule)
+
+    local OldIndex = nil
+    OldIndex = hookmetamethod(game, "__index", function(Self, Key)
+        if checkcaller() and Self == workspace.Structures and self.changedName[Key] then
+            return self.changedName[Key]
+        end
+
+        return OldIndex(Self, Key)
+    end)
     return self
 end
 function StructureModule:Spawn()
@@ -124,7 +134,6 @@ function StructureModule:TeleportAndBuild(cframe, name, message, fortDecal, InGa
     getRoot(LocalPlayer.Character).CFrame = cframe
     while not response do
         response = PlaceStructure:InvokeServer(workspace.Terrain, Enum.Material.Sandstone, name, cframe)
-        task.wait(.5)
     end
     if message then
         ShoutMessage:FireServer(message, self.Waterloo.createdStructure)
@@ -133,7 +142,7 @@ function StructureModule:TeleportAndBuild(cframe, name, message, fortDecal, InGa
         SetFlagDecal:FireServer(fortDecal)
     end
     if InGameName then
-        self.Waterloo.createdStructure.Name = InGameName
+        self.changedName[InGameName] = self.Waterloo.createdStructure
     end
     return response
 end
@@ -231,13 +240,6 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
         local resultTable = {
             name = model.Name,
         }
-        -- useful for botting (use dex to set names)
-        if not table.find(self.buildingsNames, resultTable.name) then
-            local InGameNameAndStructureName = model.Name:split('|')
-            resultTable.InGameName = InGameNameAndStructureName[1]
-            resultTable.name = InGameNameAndStructureName[2]
-        end
-        ----------
         if not structureCache[resultTable.name] then
             local model = GetStructureModel:InvokeServer(resultTable.name):Clone()
             model.Parent = nil

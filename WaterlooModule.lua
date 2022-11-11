@@ -226,7 +226,7 @@ function WaterlooModule.new()
 end
 function WaterlooModule:SaveStructureToFile(models, filePath)
     local file = {building = {}, cost = 0}
-    for _, model:Instance in ipairs(models) do
+    for _, model in ipairs(models) do
         if not model:IsDescendantOf(workspace.Structures) then continue end
         local resultTable = {
             name = model.Name,

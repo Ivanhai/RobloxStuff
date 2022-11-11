@@ -85,17 +85,16 @@ function SelectionBox:AddSelected(instance:Instance)
     box.Parent = instance
 end
 function SelectionBox:RemoveSelected(instance:Instance)
-    local index = table.find(self.Selected, instance)
-    if index then
-        table.remove(self.Selected, index)
-    end
+    table.remove(self.Selected, table.find(self.Selected, instance))
     local box = instance:FindFirstChild('SelectionBox')
     if box then
         box:Destroy()
     end
 end
 function SelectionBox:UnselectAll()
-    for _, instance in ipairs(self.Selected) do
+	-- table.remove causes all of the subsequent (following) array indices to be re-indexed every time you call it to remove an array entry
+    local saved = table.clone(self.Selected)
+    for _, instance in ipairs(saved) do
         self:RemoveSelected(instance)
     end
 end
@@ -106,25 +105,45 @@ function SelectionBox:Update()
 		self.Frame.Size = UDim2.fromOffset(Size.X, Size.Y)
 	end
 end
-function SelectionBox:InputStarted(input)
-	if self.Enabled and input.UserInputType == Enum.UserInputType.MouseButton1 then
-		self.lastPos = Vector2.new(input.Position.X, input.Position.Y)
-		self.Frame.Position = UDim2.fromOffset(self.lastPos.X, self.lastPos.Y)
-		self.Frame.Visible = true
+function SelectionBox:InputStarted(input:InputObject)
+	if self.Enabled then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and not self.holdingControl then
+            self.lastPos = UserInputService:GetMouseLocation()
+		    self.Frame.Position = UDim2.fromOffset(self.lastPos.X, self.lastPos.Y)
+		    self.Frame.Visible = true
+        elseif input.KeyCode == Enum.KeyCode.LeftControl then
+            self.holdingControl = true
+        end
 	end
 end
-function SelectionBox:InputEnded(input)
-	if self.Enabled and input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local pos = Vector2.new(input.Position.X, input.Position.Y)
-		self.Frame.Visible = false
-		local result = Search(self.Filter, To3dSpace(self.lastPos), To3dSpace(pos))
-		for _, instance in ipairs(result) do
-			if table.find(self.Selected, instance) then
-				self:RemoveSelected(instance)
-				continue
+function SelectionBox:InputEnded(input:InputObject)
+	if self.Enabled then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local pos = UserInputService:GetMouseLocation()
+            if not self.holdingControl then
+                self.Frame.Visible = false
+                local result = Search(self.Filter, To3dSpace(self.lastPos), To3dSpace(pos))
+                self:UnselectAll()
+                for _, instance in ipairs(result) do
+                    self:AddSelected(instance)
+                end
+                return
+            end
+            local unitray = Camera:ScreenPointToRay(pos.X, pos.Y)
+            local params = RaycastParams.new()
+            params.FilterType = Enum.RaycastFilterType.Whitelist
+            params.FilterDescendantsInstances = self.Filter
+            local ray = workspace:Raycast(unitray.Origin, unitray.Direction * 10000, params)
+            if not ray then return end
+            local model = ray.Instance:FindFirstAncestorOfClass("Model")
+			if table.find(self.Selected, model or ray.Instance) then
+				self:RemoveSelected(model or ray.Instance)
+			else
+				self:AddSelected(model or ray.Instance)
 			end
-            		self:AddSelected(instance)
-       		end
+        elseif input.KeyCode == Enum.KeyCode.LeftControl then
+            self.holdingControl = false
+        end
 	end
 end
 

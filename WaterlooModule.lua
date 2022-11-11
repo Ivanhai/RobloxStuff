@@ -240,6 +240,13 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
         local resultTable = {
             name = model.Name,
         }
+        -- useful for botting (use dex to set names)
+        if not table.find(self.buildingsNames, resultTable.name) then
+            local InGameNameAndStructureName = model.Name:split('|')
+            resultTable.InGameName = InGameNameAndStructureName[1]
+            resultTable.name = InGameNameAndStructureName[2]
+        end
+        ----------
         if not structureCache[resultTable.name] then
             local model = GetStructureModel:InvokeServer(resultTable.name):Clone()
             model.Parent = nil

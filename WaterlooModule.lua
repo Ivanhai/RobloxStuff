@@ -76,7 +76,7 @@ end
 local StructureModule = {}
 StructureModule.__index = StructureModule
 function StructureModule.new(Waterloo, building, cost)
-    local self = setmetatable({
+    local new = setmetatable({
         Waterloo = Waterloo,
         building = building,
         cost = cost,
@@ -85,15 +85,14 @@ function StructureModule.new(Waterloo, building, cost)
         Relative = {}
     }, StructureModule)
 
-    local OldIndex = nil
-    OldIndex = hookmetamethod(game, "__index", function(Self, Key)
-        if checkcaller() and Self == workspace.Structures and self.changedName[Key] then
-            return self.changedName[Key]
+    local OldIndex
+    OldIndex = hookmetamethod(game, "__index", newcclosure(function(Self, Key)
+        if checkcaller() and tostring(Self) == "Structures" and new.changedName[Key] then
+            return new.changedName[Key]
         end
-
         return OldIndex(Self, Key)
-    end)
-    return self
+    end))
+    return new
 end
 function StructureModule:Spawn()
     for _,structure in ipairs(self.building) do

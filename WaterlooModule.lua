@@ -96,12 +96,7 @@ function StructureModule.new(Waterloo, building, cost)
 end
 function StructureModule:Spawn()
     for _,structure in ipairs(self.building) do
-        if not structureCache[structure.name] then
-            local model = GetStructureModel:InvokeServer(structure.name):Clone()
-            model.Parent = nil
-            structureCache[structure.name] = model
-        end
-        local model = structureCache[structure.name]:Clone()
+        local model = self.Waterloo:Cache(structure.name):Clone()
         model:SetPrimaryPartCFrame(DecodeCFrame(structure.cframe))
         model.Parent = workspace
         if structure.message then
@@ -232,6 +227,14 @@ function WaterlooModule.new()
     end)
     return self
 end
+function WaterlooModule:Cache(structureName:string)
+    if not structureCache[structureName] then
+        local model = GetStructureModel:InvokeServer(structureName):Clone()
+        model.Parent = nil
+        structureCache[structureName] = model
+    end
+    return structureCache[structureName]
+end
 function WaterlooModule:SaveStructureToFile(models, filePath)
     local file = {building = {}, cost = 0}
     for _, model in ipairs(models) do
@@ -246,12 +249,7 @@ function WaterlooModule:SaveStructureToFile(models, filePath)
             resultTable.name = InGameNameAndStructureName[2]
         end
         ----------
-        if not structureCache[resultTable.name] then
-            local model = GetStructureModel:InvokeServer(resultTable.name):Clone()
-            model.Parent = nil
-            structureCache[resultTable.name] = model
-        end
-        local cframe = GetPartRelative(structureCache[resultTable.name].PrimaryPart, model:GetBoundingBox())
+        local cframe = GetPartRelative(self:Cache(resultTable.name).PrimaryPart, model:GetBoundingBox())
         resultTable.cframe = EncodeCFrame(cframe)
         if resultTable.name == "DecalSign" then
             resultTable.message = model.Center.ImageGui.ImageLabel.Image:split('//')[2]

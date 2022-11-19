@@ -210,6 +210,11 @@ function WaterlooModule.new()
             table.insert(self.buildingsNames, instance.Name)
         end
     end
+    for _, name in ipairs(self.buildingsNames) do
+        coroutine.wrap(function()
+            self:Cache(name)
+        end)()
+    end
     workspace.Structures.ChildAdded:Connect(function(child)
         if child:GetAttribute("OwnerName") == LocalPlayer.Name then
             self.createdStructure = child
